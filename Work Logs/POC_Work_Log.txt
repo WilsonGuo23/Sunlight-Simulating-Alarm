@@ -24,3 +24,9 @@ Moving work logs to this document so I can document progress in Github
 
 10/16/2025:
 uploaded C file to GitHub and read through documentation on using Pico APIs
+
+11/6/2025:
+Return from hiatus, working on communicating through wifi
+
+
+
