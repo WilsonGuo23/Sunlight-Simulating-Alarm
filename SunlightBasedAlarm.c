@@ -2,20 +2,21 @@
 #include "pico/stdlib.h"
 #include <time.h>
 
+static char event_str[128];
+#define GPIO_WATCH_PIN 16
+void gpio_event_string(char *buf, uint32_t events);
+
+void gpio_callback(uint gpio) {
+    printf("Button was pressed indicating the user wants to set a time\n");
+}
+
+
 
 int main()
 {
-    stdio_init_all();
-
+    stdio_init_all(); //enables connection to serial via printf 
+    gpio_init(GPIO_WATCH_PIN); //enables pin 16
+    gpio_set_irq_enabled_with_callback(GPIO_WATCH_PIN, GPIO_IRQ_EDGE_RISE, true, &gpio_callback); //sets pin 16 to trigger on rising edge and call gpio_callback when it does
     while (true) {
-        time_t currentTime = time(NULL);
-        char* currentTimeString = ctime(&currentTime);
-        struct tm *gm_time = gmtime(&currentTime);
-        //printf("%ld\n", currentTime);
-        printf("Tm_sec: %d\n", gm_time->tm_sec);
-        printf("Tm_hour: %d\n", gm_time->tm_hour);
-        printf("Tm_year: %d\n", gm_time->tm_year);
-        sleep_ms(5000);
-        //printf(currentTimeString);
     }
 }
