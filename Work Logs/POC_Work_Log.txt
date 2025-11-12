@@ -26,7 +26,10 @@ Moving work logs to this document so I can document progress in Github
 uploaded C file to GitHub and read through documentation on using Pico APIs
 
 11/6/2025:
-Return from hiatus, working on communicating through wifi
+Return from hiatus. Realized that I'm working with a Pico 2 and not a pico 2 W which means I don't have wifi access. pivoting to working on an interrupt that will allow me to input a time for the pico to work with. The idea is that once the pico is plugged in it will hold this time until it loses power. Eventually I will port the output from serial to uart.
 
+
+11/11/2025:
+Forgot to document work from 6-11, whoops. I've settled on using the internal clock and having a user manually set the time. Interrupts are now setup properly so that all buttons will trigger an interrupt. Next steps are to get the interrupt to recognize which pin triggered it and act appropriately, there should be 4 buttons total. 1 for minutes, 1 for hours, 1 to switch between current time and alarm time, and 1 to leave/enter editing mode
 
 
