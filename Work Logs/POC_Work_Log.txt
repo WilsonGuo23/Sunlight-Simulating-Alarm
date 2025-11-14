@@ -32,4 +32,6 @@ Return from hiatus. Realized that I'm working with a Pico 2 and not a pico 2 W w
 11/11/2025:
 Forgot to document work from 6-11, whoops. I've settled on using the internal clock and having a user manually set the time. Interrupts are now setup properly so that all buttons will trigger an interrupt. Next steps are to get the interrupt to recognize which pin triggered it and act appropriately, there should be 4 buttons total. 1 for minutes, 1 for hours, 1 to switch between current time and alarm time, and 1 to leave/enter editing mode
 
+11/14/2025:
+finished incrementing and decrementing for the alarm time setting seems to work as intended. Will need to finish the clock time setting and alarm activation before finishing up POC
 
