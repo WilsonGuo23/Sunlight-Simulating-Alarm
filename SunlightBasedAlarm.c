@@ -22,7 +22,7 @@ int minutes_selected=1;
 int current_mode;
 struct tm* clock_time;
 time_t display_time;
-void change_mode(){
+void change_mode(){ //changes modes between setting current time, setting alarm time, and resting. prints current mode to serial for testing purposes
     switch(current_mode){
         case MODE_SET_CURRENT_TIME:
             current_mode++;
