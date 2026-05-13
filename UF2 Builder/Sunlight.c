@@ -8,12 +8,14 @@
 #include "lwip/dns.h"
 #include "lwip/timeouts.h"
 //#include "time_display.h"
+
 //WIFI
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
 //GPIO PINS
 static char event_str[128];
+static volatile uint64_t last_interrupt_time = 0;
 #define GPIO_WATCH_PIN 16
 #define GPIO_INCREMENT_PIN 17
 #define GPIO_DECREMENT_PIN 18
@@ -48,7 +50,7 @@ struct tm* alarm_time;
 time_t display_time;
 char mystr[128];
 int busy=0;
-bool alarm_on=true;
+bool alarm_on=false;
 volatile alarm_id_t timing_delay = -1;
 
 //LIGHT CONTROL
@@ -261,31 +263,45 @@ void change_mode(){ //changes modes between setting current time, setting alarm 
 }
 
 //increments the current column by 1 when the corresponding button is pressed
-void increment_column(){ //TODO:finish current time setting
+void increment_column(){ 
     if(current_mode == MODE_SET_ALARM_TIME){
         if(minutes_selected){
             alarm_time_minutes++;
-        if(alarm_time_minutes > 59){
-            alarm_time_minutes = 0;
-        }
+            if(alarm_time_minutes >= 60){
+                alarm_time_minutes = 0;
+            }
         } 
-    else {
-        alarm_time_hours++;
-        if(alarm_time_hours > 23){
-            alarm_time_hours = 0;
+        else {
+            alarm_time_hours++;
+            if(alarm_time_hours >= 24){
+                alarm_time_hours = 0;
+            }
         }
+        print_alarm_time();
     }
-    print_alarm_time();
+    if (current_mode == MODE_SET_CURRENT_TIME){
+        if (minutes_selected){
+            clock_time->tm_min++;
+            if (clock_time->tm_min >= 60){
+            clock_time->tm_min = 0;
+            }
+        }
+        else {
+            clock_time->tm_hour++;
+            if (clock_time->tm_hour >= 24){
+                clock_time->tm_hour = 0;
+            }
+        }
     }
 }
 
-void decrement_column(){ //TODO:finish current time setting
+void decrement_column(){ 
     if(current_mode == MODE_SET_ALARM_TIME){
         if(minutes_selected){
         alarm_time_minutes--;
-        if(alarm_time_minutes < 0){
-            alarm_time_minutes = 59;
-        }
+            if(alarm_time_minutes < 0){
+                alarm_time_minutes = 59;
+            }
         } 
         else {
             alarm_time_hours--;
@@ -294,6 +310,20 @@ void decrement_column(){ //TODO:finish current time setting
             }
         }
         print_alarm_time();
+    }
+    if(current_mode == MODE_SET_CURRENT_TIME){
+        if (minutes_selected){
+            clock_time->tm_min--;
+            if (clock_time->tm_min < 0){
+                clock_time->tm_min = 59;
+            }
+        }
+        else {
+            clock_time->tm_hour--;
+            if (clock_time->tm_hour < 0){
+                clock_time->tm_hour = 23;
+            }
+        }
     }
 }
 
@@ -311,21 +341,30 @@ void move_column(){
 
 //triggers when the button corresponding to one of the 4 gpio pins is pressed, lets us know the user wants to change the current time.
 void gpio_callback(uint gpio, uint32_t events) {
-    //sleep_ms(500); //debounce
-    switch(gpio){
-        case GPIO_WATCH_PIN:
-            change_mode();
-            break;
-        case GPIO_INCREMENT_PIN:
-            increment_column();
-            break;
-        case GPIO_DECREMENT_PIN:
-            decrement_column();
-            break;
-        case GPIO_MOVE_PIN:
-            move_column();
-            break;
-    }
+    uint64_t now = time_us_64();
+    if(now - last_interrupt_time < 50000)
+        return;
+    last_interrupt_time = now;
+        switch(gpio){
+            case GPIO_WATCH_PIN:
+                change_mode();
+                break;
+            case GPIO_INCREMENT_PIN:
+                increment_column();
+                break;
+            case GPIO_DECREMENT_PIN:
+                decrement_column();
+                break;
+            case GPIO_MOVE_PIN:
+                move_column();
+                break;
+            case ZERO_CROSS_PIN:
+                if (alarm_on) {
+                    zero_cross_callback(gpio, events);
+                }
+                break;
+        }
+    
     //printf("GPIO %d\n", gpio); //uncomment to see which gpio pin is pressed
 }
 
@@ -335,15 +374,23 @@ static void master_init() {
 
     //PIN INITIATION
     gpio_init_mask(BIT_MASK); //enables pins 0-3,16-19
-    gpio_set_irq_enabled_with_callback(16, GPIO_IRQ_EDGE_RISE, true, &gpio_callback); //sets pin 16 to trigger on rising edge and call gpio_callback when it does
-    gpio_set_irq_enabled_with_callback(17, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
-    gpio_set_irq_enabled_with_callback(18, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
-    gpio_set_irq_enabled_with_callback(19, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
-    gpio_set_irq_enabled_with_callback(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_RISE,true,&zero_cross_callback);
+    gpio_set_irq_enabled_with_callback(GPIO_WATCH_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_callback); //sets pin 16 to trigger on rising edge and call gpio_callback when it does
+    gpio_set_irq_enabled(GPIO_INCREMENT_PIN,GPIO_IRQ_EDGE_FALL,true);
+    gpio_set_irq_enabled(GPIO_DECREMENT_PIN,GPIO_IRQ_EDGE_FALL,true);
+    gpio_set_irq_enabled(GPIO_MOVE_PIN,GPIO_IRQ_EDGE_FALL,true);
+    gpio_set_irq_enabled(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_FALL,true);
     gpio_set_dir(ZERO_CROSS_PIN, GPIO_IN);
     gpio_set_dir(TRIAC_PIN, GPIO_OUT);
     gpio_set_dir(DIO, GPIO_OUT);
     gpio_set_dir(CLK, GPIO_OUT);
+    gpio_set_dir(GPIO_DECREMENT_PIN, GPIO_IN);
+    gpio_set_dir(GPIO_INCREMENT_PIN, GPIO_IN); 
+    gpio_set_dir(GPIO_MOVE_PIN, GPIO_IN);
+    gpio_set_dir(GPIO_WATCH_PIN, GPIO_IN);
+    gpio_pull_up(GPIO_DECREMENT_PIN);
+    gpio_pull_up(GPIO_INCREMENT_PIN);
+    gpio_pull_up(GPIO_MOVE_PIN);
+    gpio_pull_up(GPIO_WATCH_PIN);
 
     //LIGHT LEVEL INCREASE
     delay_decrement_alarm=add_alarm_in_ms(1000, decrement_delay, NULL, false);
@@ -404,7 +451,11 @@ int main()
         timeinfo->tm_sec);*/
 
     while (true) {
+        //printf("%d\n", gpio_get(16));
         set_display_time(clock_time->tm_hour,clock_time->tm_min);
+        if (alarm_time_hours == clock_time->tm_hour && alarm_time_minutes == clock_time->tm_min) {
+            alarm_on=true;
+        }
         no_block_delay_us(1000000); //update display every second
         clock_time->tm_sec++;
         if (clock_time->tm_sec >= 60) {
@@ -418,6 +469,5 @@ int main()
                 }
             }
         }
-
     }
 }
