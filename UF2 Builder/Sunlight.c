@@ -1,3 +1,6 @@
+//TODO: clean up light control code
+//TODO: implement snooze button
+//TODO: upload schematic to github
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
@@ -16,16 +19,19 @@
 //GPIO PINS
 static char event_str[128];
 static volatile uint64_t last_interrupt_time = 0;
+static volatile uint64_t last_zero_cross_time = 0;
 #define GPIO_WATCH_PIN 16
 #define GPIO_INCREMENT_PIN 17
 #define GPIO_DECREMENT_PIN 18
 #define GPIO_MOVE_PIN 19
+#define SNOOZE_PIN 20
 #define BIT(n)  (1u<<(n))
-#define BIT_MASK BIT(0)|BIT(1)|BIT(2)|BIT(3)|BIT(12)|BIT(16)|BIT(17)|BIT(18)|BIT(19)
+#define BIT_MASK BIT(0)|BIT(1)|BIT(2)|BIT(3)|BIT(12)|BIT(16)|BIT(17)|BIT(18)|BIT(19)|BIT(20)
 #define TRIAC_PIN 0
 #define ZERO_CROSS_PIN 1
 #define DIO 2
 #define CLK 3
+
 // =========================
 // DIGIT MAP
 // =========================
@@ -56,7 +62,7 @@ volatile alarm_id_t timing_delay = -1;
 //LIGHT CONTROL
 volatile bool zc_flag = false;
 bool end_of_cycle=false;
-volatile uint delay_us = 7000; //2000-7000
+volatile uint delay_us = 1; //2000-7000
 volatile alarm_id_t pulse_on_alarm = -1;
 volatile alarm_id_t pulse_off_alarm = -1;
 volatile alarm_id_t delay_decrement_alarm = -1;
@@ -212,30 +218,15 @@ int64_t decrement_delay(alarm_id_t id, void *user_data) {
     return 10000;
 }
 
-//tells triac to end pulse
-int64_t triac_off_callback(alarm_id_t id, void *user_data) {
-    gpio_put(TRIAC_PIN, 0);
-    return 0;
-}
-
-//tells triac to start pulse, then sets a timer for 10 microseconds to call triac_off_callback
-int64_t triac_fire_callback(alarm_id_t id, void *user_data) {
-    gpio_put(TRIAC_PIN, 1);
-    if (pulse_off_alarm != -1) {
-        cancel_alarm(pulse_off_alarm);
-    }
-    pulse_off_alarm = add_alarm_in_us(10, triac_off_callback, NULL, false);
-    return 0;
-}
-
-//triggers when zero cross is detected by zero cross detection unit, calls triac_fire_callback to start the pulse 
+//triggers when zero cross is detected by zero cross detection unit, sets output to high for a certain amount of time based on delay_us variable to control brightness of light, then sets output back to low until next zero cross is detected
 void zero_cross_callback(uint gpio, uint32_t events) {
-    if (alarm_on){
-        if (pulse_on_alarm != -1) {
-        cancel_alarm(pulse_on_alarm);
-        }
-        pulse_on_alarm = add_alarm_in_us(delay_us, triac_fire_callback, NULL, false);
-    }
+    uint64_t now = time_us_64();
+    if(now - last_zero_cross_time < delay_us)
+        return;
+    last_zero_cross_time = now;
+    gpio_put(TRIAC_PIN, 1);
+    no_block_delay_us(100000);
+    gpio_put(TRIAC_PIN, 0);
 }
 
 //ALARM/TIME FUNCIONS
@@ -358,6 +349,9 @@ void gpio_callback(uint gpio, uint32_t events) {
             case GPIO_MOVE_PIN:
                 move_column();
                 break;
+            case SNOOZE_PIN:
+                alarm_on=false;
+                break;
             case ZERO_CROSS_PIN:
                 if (alarm_on) {
                     zero_cross_callback(gpio, events);
@@ -379,6 +373,7 @@ static void master_init() {
     gpio_set_irq_enabled(GPIO_DECREMENT_PIN,GPIO_IRQ_EDGE_FALL,true);
     gpio_set_irq_enabled(GPIO_MOVE_PIN,GPIO_IRQ_EDGE_FALL,true);
     gpio_set_irq_enabled(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_FALL,true);
+    gpio_set_irq_enabled(SNOOZE_PIN,GPIO_IRQ_EDGE_FALL,true);
     gpio_set_dir(ZERO_CROSS_PIN, GPIO_IN);
     gpio_set_dir(TRIAC_PIN, GPIO_OUT);
     gpio_set_dir(DIO, GPIO_OUT);
@@ -387,10 +382,12 @@ static void master_init() {
     gpio_set_dir(GPIO_INCREMENT_PIN, GPIO_IN); 
     gpio_set_dir(GPIO_MOVE_PIN, GPIO_IN);
     gpio_set_dir(GPIO_WATCH_PIN, GPIO_IN);
+    gpio_set_dir(SNOOZE_PIN, GPIO_IN);
     gpio_pull_up(GPIO_DECREMENT_PIN);
     gpio_pull_up(GPIO_INCREMENT_PIN);
     gpio_pull_up(GPIO_MOVE_PIN);
     gpio_pull_up(GPIO_WATCH_PIN);
+    gpio_pull_up(SNOOZE_PIN);
 
     //LIGHT LEVEL INCREASE
     delay_decrement_alarm=add_alarm_in_ms(1000, decrement_delay, NULL, false);
@@ -451,7 +448,6 @@ int main()
         timeinfo->tm_sec);*/
 
     while (true) {
-        //printf("%d\n", gpio_get(16));
         set_display_time(clock_time->tm_hour,clock_time->tm_min);
         if (alarm_time_hours == clock_time->tm_hour && alarm_time_minutes == clock_time->tm_min) {
             alarm_on=true;
