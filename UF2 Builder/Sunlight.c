@@ -1,4 +1,3 @@
-//TODO: upload schematic to github
 //TODO: seperate code into multiple files for better organization and readability, also makes it easier to navigate and understand
 #include <stdio.h>
 #include "pico/stdlib.h"
@@ -43,10 +42,10 @@ static const uint8_t digit_map[10] = {
     0x3F, 0x06, 0x5B, 0x4F, 0x66,
     0x6D, 0x7D, 0x07, 0x7F, 0x6F
 };
-typedef struct {
-    uint pin;
-    bool value;
-} pin_set_t;
+
+//time display updates
+    uint64_t last_clock_update = 0;
+    uint64_t last_display_update = 0;
 //ALARM STATES
 int alarm_time_minutes = 0;
 int alarm_time_hours = 0;
@@ -66,13 +65,12 @@ bool flicker=false;
 //LIGHT CONTROL
 volatile bool zc_flag = false;
 bool end_of_cycle=false;
-volatile uint delay_us = 6000; //2000-7000
+volatile uint delay_us = 6000; //2000-6000
 volatile alarm_id_t delay_decrement_alarm = -1;
 
 
 void no_block_delay_us(int delay_us) {
     uint64_t start = time_us_64();
-
     while ((time_us_64() - start) < delay_us) {
     }
 }
@@ -82,7 +80,6 @@ static void start_display() {
     gpio_put(DIO, 1);
     no_block_delay_us(2);
     gpio_put(DIO, 0);
-
 }
 
 static void stop_display() {
@@ -234,7 +231,16 @@ int64_t decrement_delay(alarm_id_t id, void *user_data) {
     return 10000;
 }
 
+int64_t triac_fire_callback_callback_end(alarm_id_t id, void *user_data) {
+    gpio_put(TRIAC_PIN, 0);
+    return 0;
+}
 
+int64_t triac_fire_callback(alarm_id_t id, void *user_data) {
+    gpio_put(TRIAC_PIN, 1);
+    add_alarm_in_us(50,triac_fire_callback_callback_end, NULL, true);
+    return 0;
+}
 
 //triggers when zero cross is detected by zero cross detection unit, sets output to high for a certain amount of time based on delay_us variable to control brightness of light, then sets output back to low until next zero cross is detected
 void zero_cross_callback(uint gpio, uint32_t events)
@@ -246,13 +252,7 @@ void zero_cross_callback(uint gpio, uint32_t events)
 
     last_zero_cross_time = now;
 
-    no_block_delay_us(delay_us);
-
-    gpio_put(TRIAC_PIN, 1);
-
-    no_block_delay_us(50);
-
-    gpio_put(TRIAC_PIN, 0);
+    add_alarm_in_us(delay_us, triac_fire_callback, NULL, true);
 }
 
 //ALARM/TIME FUNCIONS
@@ -379,16 +379,15 @@ void display_handler(){
 void alarm_check(){
     if (alarm_time_hours == clock_time->tm_hour && alarm_time_minutes == clock_time->tm_min) {
             alarm_on=true;
+            gpio_set_irq_enabled(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_FALL,true);
     }
 }
 
 //triggers when the button corresponding to one of the 4 gpio pins is pressed, lets us know the user wants to change the current time.
 void gpio_callback(uint gpio, uint32_t events) {
-    if(gpio == ZERO_CROSS_PIN){
-        if (alarm_on) {
+    if (alarm_on && gpio==ZERO_CROSS_PIN) {
             zero_cross_callback(gpio, events);
             return;
-        }
     }
     uint64_t now = time_us_64();
     if(now - last_interrupt_time < 50000)
@@ -445,6 +444,7 @@ static void master_init() {
 
     //Create Timers
     clock_time = localtime(&display_time);
+    
 }
 
 int main()
@@ -496,10 +496,8 @@ int main()
         timeinfo->tm_hour,
         timeinfo->tm_min,
         timeinfo->tm_sec);*/
-    
     while (true) {
-        alarm_check();
-        display_handler();
+        uint64_t now1 = time_us_64();
         if(change_mode_flag){
                 change_mode();
                 change_mode_flag=false;
@@ -519,10 +517,16 @@ int main()
         if(snooze_flag){
             alarm_on=false;
             snooze_flag=false;
+            gpio_set_irq_enabled(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_FALL,false);
         }
-        no_block_delay_us(500000);
-        display_handler();
-        no_block_delay_us(500000);
-        clock_increment(); //increment internal clock time by 1 second
+        if(now1 - last_display_update >= 500000){
+            last_display_update = now1;
+            display_handler();
+        }
+        if(now1 - last_clock_update >= 1000000){
+            last_clock_update = now1;
+            clock_increment();
+            alarm_check();
+        }
     }
 }
