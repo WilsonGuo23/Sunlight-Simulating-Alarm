@@ -67,6 +67,7 @@ volatile bool zc_flag = false;
 bool end_of_cycle=false;
 volatile uint delay_us = 6000; //2000-6000
 volatile alarm_id_t delay_decrement_alarm = -1;
+uint64_t last_delay_decrement_update = 0;
 
 
 void no_block_delay_us(int delay_us) {
@@ -220,15 +221,13 @@ void init_sntp(void)
 
 //LIGHT CONTROL FUNCTIONS
 //used to slowly increase light level
-int64_t decrement_delay(alarm_id_t id, void *user_data) {
+void decrement_delay(){
     if (!end_of_cycle){
-        delay_us-=1000;
+        delay_us-=10;
     }
-    
-    if (delay_us<=3000){
+    if (delay_us<=2000){
         end_of_cycle=true;
     }
-    return 10000;
 }
 
 int64_t triac_fire_callback_callback_end(alarm_id_t id, void *user_data) {
@@ -262,15 +261,15 @@ void change_mode(){ //changes modes between setting current time, setting alarm 
     switch(current_mode){
         case MODE_SET_CURRENT_TIME:
             current_mode++;
-            printf("Set Alarm Time\n");
+            //printf("Set Alarm Time\n");
             break;
         case MODE_SET_ALARM_TIME:
             current_mode++;
-            printf("Resting\n");
+            //printf("Resting\n");
             break;
         case RESTING:
             current_mode=0;
-            printf("Set Clock Time\n");
+            //printf("Set Clock Time\n");
             break;
     }
 }
@@ -342,10 +341,10 @@ void decrement_column(){
 void move_column(){
     if (minutes_selected){
         minutes_selected=0;
-        printf("changing to hours\n");
+        //printf("changing to hours\n");
     } else {
         minutes_selected=1;
-        printf("changing to minutes\n");
+        //printf("changing to minutes\n");
     }
     
 }
@@ -390,7 +389,7 @@ void gpio_callback(uint gpio, uint32_t events) {
             return;
     }
     uint64_t now = time_us_64();
-    if(now - last_interrupt_time < 50000)
+    if(now - last_interrupt_time < 100000)
         return;
     last_interrupt_time = now;
         switch(gpio){
@@ -517,6 +516,7 @@ int main()
         if(snooze_flag){
             alarm_on=false;
             snooze_flag=false;
+            delay_us=6000;
             gpio_set_irq_enabled(ZERO_CROSS_PIN,GPIO_IRQ_EDGE_FALL,false);
         }
         if(now1 - last_display_update >= 500000){
@@ -527,6 +527,10 @@ int main()
             last_clock_update = now1;
             clock_increment();
             alarm_check();
+        }
+        if(now1 - last_delay_decrement_update >= 10000 && alarm_on){
+            last_delay_decrement_update = now1;
+            decrement_delay();
         }
     }
 }
