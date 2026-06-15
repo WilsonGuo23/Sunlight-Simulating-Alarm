@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Sunlight Sunlight.c )
+add_executable(Sunlight Sunlight.c display.c time_manager.c buttons.c dimmer.c alarm_manager.c)
 
 pico_set_program_name(Sunlight "Sunlight")
 pico_set_program_version(Sunlight "0.1")
