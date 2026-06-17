@@ -2,9 +2,9 @@
 #define CONFIG_H
 
 #define GPIO_WATCH_PIN      16
-#define GPIO_INCREMENT_PIN  17
-#define GPIO_DECREMENT_PIN  18
-#define GPIO_MOVE_PIN       19
+#define GPIO_INCREMENT_PIN  18
+#define GPIO_DECREMENT_PIN  19
+#define GPIO_MOVE_PIN       17
 #define SNOOZE_PIN          20
 
 #define TRIAC_PIN           0
