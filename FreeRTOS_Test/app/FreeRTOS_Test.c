@@ -50,8 +50,10 @@ int main(void)
     //xTaskCreate(alarm_task, "alarm", 512, NULL, 2, NULL);
     //xTaskCreate(display_task, "display", 256, NULL, 1, NULL);
     //xTaskCreate(input_task, "input", 256, NULL, 3, NULL);
+    
+    /* TEST CODE FOR DRIVERS - DELETE LATER
     display_driver_show_time(12, 34, 56);
-    triac_set_brightness(99);
+    triac_set_brightness(5);
     button_t button = BUTTON_NONE;
 
     while(1){
@@ -73,5 +75,6 @@ int main(void)
         }
 
     }
+        */
     vTaskStartScheduler();
 }

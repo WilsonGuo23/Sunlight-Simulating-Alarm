@@ -30,8 +30,7 @@ static int64_t triac_fire_callback(alarm_id_t id, void *user_data)
 
 static void zero_cross_callback(uint gpio, uint32_t events)
 {
-    uint32_t delay_us =
-        ((100-brightness_percent_) * 6000) / 100;
+    uint32_t delay_us =7000 - ((brightness_percent_ * (7000 - 850)) / 100);
 
     add_alarm_in_us(
         delay_us,
