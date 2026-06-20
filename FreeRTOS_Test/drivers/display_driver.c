@@ -130,7 +130,7 @@ void display_driver_init(void)
     send_command(0x8F);
 }
 
-void display_driver_show_time(uint8_t hours, uint8_t minutes, uint8_t seconds)
+void display_driver_show_time(uint8_t hours, uint8_t minutes)
 {
     uint8_t digits[4];
     digits[0] = encode_digit(hours / 10, false);

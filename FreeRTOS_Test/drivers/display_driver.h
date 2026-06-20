@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 void display_driver_init(void);
-void display_driver_show_time(uint8_t hours, uint8_t minutes, uint8_t seconds);
+void display_driver_show_time(uint8_t hours, uint8_t minutes);
 
 #endif

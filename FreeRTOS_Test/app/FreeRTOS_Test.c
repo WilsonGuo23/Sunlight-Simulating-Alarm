@@ -6,9 +6,12 @@
 #include "pins.h"
 
 #include "system_init.h"
-#include "drivers/buttons_driver.h"
-#include "drivers/display_driver.h"
-#include "drivers/triac_driver.h"
+#include "services/time_service.h"
+#include "services/display_service.h"
+#include "services/input_service.h"
+#include "services/alarm_service.h"
+#include "services/ui_service.h"
+
 
 /*void alarm_task(void *p)
 {
@@ -38,43 +41,31 @@ void input_task(void *p)
     }
 }
 */
+
+
+
+
 int main(void)
 {
     system_init();
 
-    //time_service_init();
-    //display_service_init();
+    time_service_init();
+    display_service_init();
+    input_service_init();
+    alarm_service_init();
+    ui_service_init();
+
+    xTaskCreate(time_task, "time", 256, NULL, 1, NULL);
+    xTaskCreate(input_task, "input", 256, NULL, 3, NULL);
+    xTaskCreate(button_debug_task, "button_debug", 512, NULL, 2, NULL);
+    //
     //input_service_init();
     //alarm_service_init();
 
     //xTaskCreate(alarm_task, "alarm", 512, NULL, 2, NULL);
     //xTaskCreate(display_task, "display", 256, NULL, 1, NULL);
     //xTaskCreate(input_task, "input", 256, NULL, 3, NULL);
-    
-    /* TEST CODE FOR DRIVERS - DELETE LATER
-    display_driver_show_time(12, 34, 56);
-    triac_set_brightness(5);
-    button_t button = BUTTON_NONE;
 
-    while(1){
-        //printf("Triac brightness: %d\n", triac_get_brightness());
-        if (buttons_read(&button) && button == BUTTON_DEC) {
-            printf("Button pressed: INC\n");
-        }
-        if (buttons_read(&button) && button == BUTTON_INC) {
-            printf("Button pressed: DEC\n");
-        }
-        if (buttons_read(&button) && button == BUTTON_MODE) {
-            printf("Button pressed: MODE\n");
-        }
-        if (buttons_read(&button) && button == BUTTON_ALARM) {
-            printf("Button pressed: ALARM\n");
-        }
-        if (buttons_read(&button) && button == BUTTON_HOUR_MIN) {
-            printf("Button pressed: HOUR_MIN\n");
-        }
-
-    }
-        */
+   
     vTaskStartScheduler();
 }

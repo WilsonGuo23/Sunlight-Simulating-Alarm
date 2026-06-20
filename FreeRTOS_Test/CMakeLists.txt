@@ -53,6 +53,12 @@ target_sources(FreeRTOS_Test PRIVATE
     drivers/buttons_driver.c
     drivers/display_driver.c
     drivers/triac_driver.c
+    services/time_service.c
+    services/display_service.c
+    services/input_service.c
+    services/alarm_service.c
+    services/ui_service.c
+    services/sunrise_service.c
 )
 
 option(ENABLE_DRIVER_TESTS "Build the driver test harness" OFF)
