@@ -1,5 +1,6 @@
 #ifndef UI_SERVICE_H
 #define UI_SERVICE_H
+#include <stdbool.h>
 
 typedef enum
 {
@@ -10,11 +11,7 @@ typedef enum
 
 } ui_mode_t;
 
-typedef enum
-{
-    HOUR_MIN_MODE_HOUR = 0,
-    HOUR_MIN_MODE_MINUTE
-} hour_min_mode_t;
+
 
 /*
  * Initialize UI state
@@ -35,5 +32,12 @@ void ui_service_set_mode(ui_mode_t mode);
  * Get current mode
  */
 ui_mode_t ui_service_get_mode(void);
+
+/*
+ * Set whether hour or minute is being adjusted in time/alarm set modes
+ */
+void ui_service_set_hour_mode(bool hour_mode);
+void ui_service_toggle_hour_mode(void);
+bool ui_service_get_hour_mode(void);
 
 #endif

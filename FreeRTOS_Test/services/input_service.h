@@ -37,9 +37,5 @@ void input_task(void *pvParameters);
  */
 QueueHandle_t input_service_get_queue(void);
 
-/*
- * Debug task to print button events to console
- */
-void button_debug_task(void *pvParameters);
 
 #endif

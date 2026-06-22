@@ -78,7 +78,6 @@ void input_task(void *pvParameters)
                         .button = stable_,
                         .type = INPUT_EVENT_PRESS
                     };
-
                     xQueueSend(input_queue_, &evt, 0);
 
                     press_time_ = now;
@@ -125,63 +124,5 @@ void input_task(void *pvParameters)
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-void button_debug_task(void *pvParameters)
-{
-    (void)pvParameters;
-
-    QueueHandle_t q = input_service_get_queue();
-    input_event_t evt;
-
-    button_t active_button = BUTTON_NONE;
-    TickType_t press_time = 0;
-
-    while (1)
-    {
-        if (xQueueReceive(q, &evt, portMAX_DELAY))
-        {
-            TickType_t now = xTaskGetTickCount();
-
-            switch (evt.type)
-            {
-                case INPUT_EVENT_PRESS:
-
-                    active_button = evt.button;
-                    press_time = now;
-
-                    printf("BUTTON %d PRESSED\n", evt.button);
-                    break;
-
-                case INPUT_EVENT_HOLD:
-
-                    if (evt.button == active_button)
-                    {
-                        TickType_t held_ms =
-                            (now - press_time) * portTICK_PERIOD_MS;
-
-                        printf("BUTTON %d HELD: %lu ms\n",
-                               evt.button,
-                               held_ms);
-                    }
-                    break;
-
-                case INPUT_EVENT_RELEASE:
-
-                    if (evt.button == active_button)
-                    {
-                        TickType_t total_ms =
-                            (now - press_time) * portTICK_PERIOD_MS;
-
-                        printf("BUTTON %d RELEASED after %lu ms\n",
-                               evt.button,
-                               total_ms);
-
-                        active_button = BUTTON_NONE;
-                    }
-                    break;
-            }
-        }
     }
 }

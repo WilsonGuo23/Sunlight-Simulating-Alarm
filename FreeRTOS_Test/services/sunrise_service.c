@@ -1,5 +1,5 @@
 #include "sunrise_service.h"
-
+#include "stdio.h"
 #include "triac_driver.h"
 
 #include "FreeRTOS.h"
@@ -58,22 +58,10 @@ uint8_t sunrise_service_get_brightness(void)
 
 void sunrise_service_update(void)
 {
-    TickType_t now;
-
     if (!sunrise_active_)
     {
         return;
     }
-
-    now = xTaskGetTickCount();
-
-    if ((now - last_update_tick_) <
-        pdMS_TO_TICKS(SUNRISE_UPDATE_PERIOD_MS))
-    {
-        return;
-    }
-
-    last_update_tick_ = now;
 
     if (current_brightness_ < SUNRISE_MAX_BRIGHTNESS)
     {
@@ -85,4 +73,5 @@ void sunrise_service_update(void)
     {
         sunrise_active_ = false;
     }
+    printf("brightness: %d\n", current_brightness_);
 }

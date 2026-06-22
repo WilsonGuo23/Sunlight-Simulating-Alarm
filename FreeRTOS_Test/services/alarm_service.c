@@ -15,7 +15,7 @@ void alarm_service_init(void)
     alarm_hour_ = 0;
     alarm_minute_ = 0;
 
-    alarm_enabled_ = false;
+    alarm_enabled_ = true;
 }
 
 void alarm_service_set_alarm(uint8_t hour,
@@ -53,8 +53,9 @@ void alarm_service_update(void)
 {
     uint8_t current_hour;
     uint8_t current_minute;
+    bool sunrise_active_ = sunrise_service_is_active();
 
-    if (!alarm_enabled_) //|| sunrise_active_)
+    if ((!alarm_enabled_) || sunrise_active_)
     {
         return;
     }
@@ -66,9 +67,75 @@ void alarm_service_update(void)
     if ((current_hour == alarm_hour_) &&
         (current_minute == alarm_minute_))
     {
-        //sunrise_active_ = true;
-        printf("the sun should be rising now\n");
-        //sunrise_service_start();
+        sunrise_service_start();
     }
 }
 
+void alarm_service_increment_hour(void)
+{
+    alarm_hour_++;
+
+    if (alarm_hour_ >= 24)
+    {
+        alarm_hour_ = 0;
+    }
+}
+
+void alarm_service_increment_minute(void)
+{
+    alarm_minute_++;
+
+    if (alarm_minute_ >= 60)
+    {
+        alarm_minute_ = 0;
+    }
+}
+
+void alarm_service_decrement_hour(void)
+{
+    
+    if (alarm_hour_ <= 0)
+    {
+        alarm_hour_ = 23;
+    }
+    else
+    {
+        alarm_hour_--;
+    }
+}
+
+void alarm_service_decrement_minute(void)
+{
+    if (alarm_minute_ <= 0)
+    {
+        alarm_minute_ = 59;
+    }
+    else
+    {
+        alarm_minute_--;
+    }
+}
+
+void alarm_service_increment(bool hour_mode)
+{
+    if (hour_mode)
+    {
+        alarm_service_increment_hour();
+    }
+    else
+    {
+        alarm_service_increment_minute();
+    }
+}
+
+void alarm_service_decrement(bool hour_mode)
+{
+    if (hour_mode)
+    {
+        alarm_service_decrement_hour();
+    }
+    else
+    {
+        alarm_service_decrement_minute();
+    }
+}

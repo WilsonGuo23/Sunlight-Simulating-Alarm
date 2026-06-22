@@ -1,10 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
-
-#include <stdint.h>
-#include <stdbool.h>
-
 #include "display_driver.h"
+
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #include "../app/pins.h"
@@ -130,13 +127,26 @@ void display_driver_init(void)
     send_command(0x8F);
 }
 
-void display_driver_show_time(uint8_t hours, uint8_t minutes)
+void display_driver_show_time(uint8_t hours, uint8_t minutes, bool hour_mode, bool flicker)
 {
     uint8_t digits[4];
     digits[0] = encode_digit(hours / 10, false);
     digits[1] = encode_digit(hours % 10, true);
     digits[2] = encode_digit(minutes / 10, false);
     digits[3] = encode_digit(minutes % 10, false);
+    if (flicker&&hour_mode == 1) {
+        digits[0] = 0;
+        digits[1] = 0x80; // keep colon on when flickering hours for better visibility
+    } else if (flicker && hour_mode == 0) {
+        digits[2] = 0;
+        digits[3] = 0;
+    }
 
     write_data(digits, 4);
+}
+
+void display_driver_clear(void)
+{
+    uint8_t blank[4] = {0, 0, 0, 0};
+    write_data(blank, 4);
 }

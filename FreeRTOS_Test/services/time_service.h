@@ -1,6 +1,6 @@
 #ifndef TIME_SERVICE_H
 #define TIME_SERVICE_H
-
+#include <stdbool.h>
 #include <stdint.h>
 
 void time_service_init(void);
@@ -17,5 +17,12 @@ void time_service_increment_hour(void);
 
 void time_service_increment_minute(void);
 
-void time_task(void *pvParameters);
+void time_service_decrement_hour(void);
+
+void time_service_decrement_minute(void);
+
+void time_service_increment(bool hour_mode);
+
+void time_service_decrement(bool hour_mode);
+
 #endif
