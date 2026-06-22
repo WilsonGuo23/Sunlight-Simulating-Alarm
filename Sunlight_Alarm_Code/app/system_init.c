@@ -7,6 +7,7 @@
 #include "drivers/display_driver.h"
 #include "drivers/triac_driver.h"
 
+
 void system_init(void)
 {
     // Standard SDK initialization
