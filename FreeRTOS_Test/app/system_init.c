@@ -8,9 +8,6 @@
 #include "drivers/triac_driver.h"
 
 
-
-
-
 void system_init(void)
 {
     // Standard SDK initialization
@@ -20,6 +17,4 @@ void system_init(void)
     buttons_init(BUTTON_INC_PIN, BUTTON_DEC_PIN, BUTTON_MODE_PIN, BUTTON_SNOOZE_PIN, BUTTON_HOUR_MIN_PIN);
     display_driver_init();
     triac_init(TRIAC_PIN, ZERO_CROSS_PIN);
-
-    
 }

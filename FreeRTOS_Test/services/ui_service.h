@@ -23,10 +23,6 @@ void ui_service_init(void);
  */
 void ui_service_next_mode(void);
 
-/*
- * Set mode directly
- */
-void ui_service_set_mode(ui_mode_t mode);
 
 /*
  * Get current mode

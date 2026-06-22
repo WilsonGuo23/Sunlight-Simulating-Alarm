@@ -15,6 +15,7 @@ static uint8_t current_brightness_;
 
 static TickType_t last_update_tick_;
 
+//sets everything to off to avoid flashing the user on startup
 void sunrise_service_init(void)
 {
     sunrise_active_ = false;
@@ -26,6 +27,7 @@ void sunrise_service_init(void)
     triac_set_brightness(0);
 }
 
+//sets the sunrise_active flag to true and places the light in a starting state
 void sunrise_service_start(void)
 {
     sunrise_active_ = true;
@@ -37,6 +39,7 @@ void sunrise_service_start(void)
     triac_set_brightness(current_brightness_);
 }
 
+//turns everything off and sets the sunrise_active flag to to false
 void sunrise_service_stop(void)
 {
     sunrise_active_ = false;
@@ -46,16 +49,19 @@ void sunrise_service_stop(void)
     triac_set_brightness(0);
 }
 
+//returns if sunrise is currently active or not
 bool sunrise_service_is_active(void)
 {
     return sunrise_active_;
 }
 
+//returns current triac birghtness percentage
 uint8_t sunrise_service_get_brightness(void)
 {
     return current_brightness_;
 }
 
+//increments brightness of alarm by 1% each time it's called
 void sunrise_service_update(void)
 {
     if (!sunrise_active_)

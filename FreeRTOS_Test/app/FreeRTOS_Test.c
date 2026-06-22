@@ -14,6 +14,7 @@
 
 //TODO: make alarm task able to rest until needed, instead of checking every 10 seconds. This will reduce CPU usage and allow for more accurate alarm triggering.
 //TODO: comment code to explain the functionality of each task and function, making it easier to understand and maintain.
+
 // Updates the display every 1/2 second depending on the mode (clock, set time, set alarm, display off)
 void display_task(void *p)
 {
@@ -89,11 +90,12 @@ void sunrise_task(void *pvParameters)
     }
 }
 
+//receives button presses and handles them appropriately
 void handle_button_press(button_t button)
 {
     switch (button)
     {
-        case BUTTON_INC:
+        case BUTTON_INC: //increments clock/timer
             if (ui_service_get_mode() == UI_MODE_SET_TIME)
             {
                 time_service_increment(ui_service_get_hour_mode());
@@ -104,7 +106,7 @@ void handle_button_press(button_t button)
             }
             break;
 
-        case BUTTON_DEC:
+        case BUTTON_DEC: //decrements clock/timer
             if (ui_service_get_mode() == UI_MODE_SET_TIME)
             {
                 time_service_decrement(ui_service_get_hour_mode());
@@ -115,15 +117,15 @@ void handle_button_press(button_t button)
             }
             break;
 
-        case BUTTON_MODE:
+        case BUTTON_MODE: //changes display mode
             ui_service_next_mode();
             break;
 
-        case BUTTON_SNOOZE:
+        case BUTTON_SNOOZE: //turns off lightbulb alarm
             sunrise_service_stop();
             break;
 
-        case BUTTON_HOUR_MIN:
+        case BUTTON_HOUR_MIN: //toggles between hour and mins for incrementing and decrementing functions
             ui_service_toggle_hour_mode();
             break;
 
@@ -133,7 +135,7 @@ void handle_button_press(button_t button)
 
 }
 
-
+//checks queue for button presses, then pass them to handle_button_press
 void button_processing_task(void *pvParameters)
 {
     input_event_t evt;
@@ -153,6 +155,7 @@ void button_processing_task(void *pvParameters)
 
 int main(void)
 {
+    //initialize drivers and services
     system_init();
 
     time_service_init();
@@ -161,15 +164,14 @@ int main(void)
     alarm_service_init();
     ui_service_init();
 
-    
-    xTaskCreate(time_task, "time update", 256, NULL, 1, NULL); //updates clock every minute
+    //create tasks that will run through the scheduler
+    xTaskCreate(time_task, "time_update", 256, NULL, 1, NULL); //updates clock every minute
     xTaskCreate(input_task, "input", 256, NULL, 3, NULL); //reads buttons and generates events in queue
     xTaskCreate(alarm_task, "alarm", 256, NULL, 2, NULL); //checks if alarm should be triggered every 10 seconds
     xTaskCreate(display_task, "display", 512, NULL, 1, NULL); //updates display every 1/2 second depending on mode (clock, set time, set alarm, display off)
     xTaskCreate(button_processing_task, "button_check", 512, NULL, 2, NULL); //processes button events and prints to console which button is being pressed, held, or released, and for how long
     xTaskCreate(sunrise_task, "sunrise", 256, NULL, 2, NULL); //updates sunrise brightness every second
 
-
-   
+    //run tasks
     vTaskStartScheduler();
 }

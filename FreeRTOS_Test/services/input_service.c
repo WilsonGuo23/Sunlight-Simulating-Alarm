@@ -22,7 +22,7 @@ static uint32_t press_time_ = 0;
 static uint32_t last_repeat_time_ = 0;
 
 /* ================= INIT ================= */
-
+//creates queue and sets state tracking to a starting state
 void input_service_init(void)
 {
     input_queue_ = xQueueCreate(10, sizeof(input_event_t));
@@ -36,14 +36,14 @@ void input_service_init(void)
 }
 
 /* ================= ACCESSOR ================= */
-
+//enables queue to be accessed by other layers by returning queue
 QueueHandle_t input_service_get_queue(void)
 {
     return input_queue_;
 }
 
 /* ================= TASK ================= */
-
+//polls gpio pins and sends events to a queue for processing
 void input_task(void *pvParameters)
 {
     (void)pvParameters;
