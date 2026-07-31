@@ -15,6 +15,6 @@ void system_init(void)
 
     // Driver initialization
     buttons_init(BUTTON_INC_PIN, BUTTON_DEC_PIN, BUTTON_MODE_PIN, BUTTON_SNOOZE_PIN, BUTTON_HOUR_MIN_PIN);
-    display_driver_init();
+    display_driver_init(DISPLAY_CLK_PIN, DISPLAY_DIO_PIN);
     triac_init(TRIAC_PIN, ZERO_CROSS_PIN);
 }

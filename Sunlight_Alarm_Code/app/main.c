@@ -13,7 +13,6 @@
 #include "services/ui_service.h"
 
 //TODO: make alarm task able to rest until needed, instead of checking every 10 seconds. This will reduce CPU usage and allow for more accurate alarm triggering.
-//TODO: comment code to explain the functionality of each task and function, making it easier to understand and maintain.
 
 // Updates the display every 1/2 second depending on the mode (clock, set time, set alarm, display off)
 void display_task(void *p)
