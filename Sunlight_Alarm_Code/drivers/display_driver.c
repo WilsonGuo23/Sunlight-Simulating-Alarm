@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <stdbool.h
+#include <stdbool.h>
 
 #include "stdio.h"
 #include "FreeRTOS.h"
@@ -59,9 +59,9 @@ static void queue_pin_state(uint8_t pin, bool level, uint64_t delay)
     }
 }
 
-static int64_t set_pin(alarm_id_t id, void *user_data)
+static int64_t set_pin(alarm_id_t id, void *user_data){
 
-    queue_processing_active = true;{
+    queue_processing_active = true;
     pin_change_t next_change;
 
     if (xQueueReceiveFromISR(pin_state_queue_, &next_change, NULL) == pdPASS)
@@ -84,8 +84,7 @@ static int64_t set_pin(alarm_id_t id, void *user_data)
 }
 
 void process_queue(){
-    if (!queue_processing_active)
-    
+    if (!queue_processing_active){
         add_alarm_in_us(0, set_pin, NULL, false);
     }
     while (queue_processing_active);
@@ -331,7 +330,7 @@ void display_driver_init(uint8_t clk_pin, uint8_t dio_pin)
 {
     _clk_pin = clk_pin;
     _dio_pin = dio_pin;
-    pin_state_queue_ = xQueueCreate1200, sizeof(pin_change_t));
+    pin_state_queue_ = xQueueCreate(100, sizeof(pin_change_t));
 
     gpio_init(_clk_pin);
     gpio_init(_dio_pin);
@@ -340,9 +339,10 @@ void display_driver_init(uint8_t clk_pin, uint8_t dio_pin)
     gpio_set_dir(_dio_pin, GPIO_OUT);
 
     /* Set data mode + auto-increment */
-   bsend_command(0x40);
+   send_command(0x40);
 
-    /* Set brightness (0x88–0x8F, max brightness here) */    sbnd_command(0x8F);;
+    /* Set brightness (0x88–0x8F, max brightness here) */  
+    send_command(0x8F);;
 }
 
 /* =========================================================
@@ -383,35 +383,7 @@ void display_driver_show_time(uint8_t hours, uint8_t minutes, bool hour_mode, bo
     write_data(digits, 4);
 }
 
-/* =========================================================
- * Clear display (turn off all segments)
- * ========================================================= */
-void display_driver_clear(void)
-{
-    uint8_t blank[4] = {0, 0, 0, 0};
-    write_data(blank, 4);
-}gits[2] = 0;
-        digits[3] = 0;
-    }
 
-    /* Push updated buffer to display */
-    write_data(digits, 4);
-}
-
-/* =========================================================
- * Clear display (turn off all segments)
- * ========================================================= */
-void display_driver_clear(void)
-{
-    uint8_t blank[4] = {0, 0, 0, 0};
-    write_data(blank, 4);
-}its[2] = 0;
-        digits[3] = 0;
-    }
-
-    /* Push updated buffer to display */
-    write_data(digits, 4);
-}
 
 /* =========================================================
  * Clear display (turn off all segments)
